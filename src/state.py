@@ -28,9 +28,10 @@ ACTIVE_STATUSES = {
     "extracting",
     "drafting",
     "qa",
+    "revision_pending",
     "revising",
 }
-TERMINAL_STATUSES = {"v1_done", "cancelled", "failed"}
+TERMINAL_STATUSES = {"v1_done", "v1_done_revised", "cancelled", "failed"}
 
 
 @dataclass
@@ -47,9 +48,26 @@ class Run:
     started_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     completed_at: Optional[str] = None
     stage_history: list[dict] = field(default_factory=list)
+    # Bot-posted gate messages — keyed by gate name (handshake, smell_test,
+    # revision_summary, ...). Used by the reaction handler to map a reaction
+    # back to a run + gate.
+    gate_message_ts: dict[str, str] = field(default_factory=dict)
+    # When a revision is pending approval, this holds the materials the agent
+    # will receive: comment lists per doc + any additional source material
+    # (from pptx/pdf uploads). Cleared after revision completes.
+    pending_revision: Optional[dict] = None
 
     def is_active(self) -> bool:
         return self.status in ACTIVE_STATUSES
+
+    def next_version(self) -> str:
+        """Bump the patch version: v1.0 -> v1.1 -> v1.2 ..."""
+        try:
+            major, minor = self.version.lstrip("v").split(".")
+            return f"v{major}.{int(minor) + 1}"
+        except Exception:
+            # version was just "v1" with no minor — start at v1.1
+            return f"{self.version}.1"
 
     def mark(self, new_status: str, note: str = "") -> None:
         self.stage_history.append(
@@ -92,6 +110,15 @@ class StateStore:
 
     def find_by_thread(self, thread_ts: str) -> Optional[Run]:
         return next((r for r in self._runs if r.thread_ts == thread_ts), None)
+
+    def find_by_gate_message(self, msg_ts: str) -> Optional[Run]:
+        """Look up a run by the ts of any bot-posted gate message
+        (handshake, smell_test, etc.).
+        """
+        for r in self._runs:
+            if msg_ts in r.gate_message_ts.values():
+                return r
+        return None
 
     def all_runs(self) -> list[Run]:
         return list(self._runs)

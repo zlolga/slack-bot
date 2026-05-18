@@ -21,6 +21,10 @@ from typing import Optional
 
 from slack_bolt.async_app import AsyncApp
 
+from ..google.drive_helpers import (
+    list_files_in_folder,
+    list_unresolved_comments,
+)
 from ..state import StateStore
 
 log = logging.getLogger(__name__)
@@ -98,7 +102,7 @@ async def _handle_setup(
         thread_ts=message_ts, channel_id=channel_id, url=url, linkedin=linkedin
     )
 
-    await say(
+    resp = await say(
         text=(
             f"🆕 *New workspace-setup run requested*\n"
             f"*Company:* {run.company} (parsed from URL)\n"
@@ -109,6 +113,11 @@ async def _handle_setup(
         ),
         thread_ts=message_ts,
     )
+    # Capture the bot message ts so the reaction handler can map reactions
+    # on the handshake back to this run.
+    if resp and "ts" in resp:
+        run.gate_message_ts["handshake"] = resp["ts"]
+        state.update(run)
 
 
 async def _handle_add(
@@ -143,15 +152,104 @@ async def _handle_add(
 async def _handle_revise(
     text: str, channel_id: str, message_ts: str, state: StateStore, say
 ) -> None:
+    # Revise targets the most recent run for this channel.
     run = state.active_run() or _last_terminal(state)
     if run is None:
         await say(text="No run to revise.", thread_ts=message_ts)
         return
-    # TODO: wire to agent revise
+    if run.drive_folder_id is None:
+        await say(
+            text=f"Run for {run.company} has no Drive folder — nothing to revise.",
+            thread_ts=message_ts,
+        )
+        return
+
     await say(
-        text=f"✍️ Stub: would apply feedback to {run.company} ({run.version}).",
+        text=f"📬 Fetching comments from `{run.company}/` …",
         thread_ts=message_ts,
     )
+
+    try:
+        files = list_files_in_folder(run.drive_folder_id)
+    except Exception as e:
+        log.exception("Failed to list files in folder")
+        await say(text=f"❌ Drive listing failed: `{e}`", thread_ts=message_ts)
+        return
+
+    # Skip prior CHANGES files when collecting comments — we revise the
+    # workspace artifacts themselves, not the changelog.
+    files = [f for f in files if not f["name"].startswith("CHANGES")]
+
+    per_doc_comments: list[dict] = []
+    total = 0
+    for f in files:
+        try:
+            comments = list_unresolved_comments(f["id"])
+        except Exception as e:
+            log.warning("Could not fetch comments for %s: %s", f["name"], e)
+            comments = []
+        if comments:
+            per_doc_comments.append({"file": f, "comments": comments})
+            total += len(comments)
+
+    if total == 0:
+        await say(
+            text=(
+                f"📭 No unresolved comments in `{run.company}/`. "
+                "Add Google Docs comments on the artifacts you want changed, "
+                "then `@outrizz-bot revise` again."
+            ),
+            thread_ts=message_ts,
+        )
+        return
+
+    # Build summary
+    lines = [
+        f"📬 Found *{total}* unresolved comment(s) across *{len(per_doc_comments)}* doc(s):\n"
+    ]
+    n = 1
+    for entry in per_doc_comments:
+        lines.append(f"\n*{entry['file']['name']}*")
+        for c in entry["comments"]:
+            quote = c["content"].replace("\n", " ").strip()
+            if len(quote) > 140:
+                quote = quote[:135] + "…"
+            anchor = f" `({c['anchor']})`" if c.get("anchor") else ""
+            lines.append(f"  {n}. _{c['author_name']}_{anchor}: \"{quote}\"")
+            n += 1
+
+    next_version = run.next_version()
+    lines.append(
+        f"\nApply all and produce *{next_version}*? "
+        "React ✅ to proceed / ❌ to cancel."
+    )
+
+    # Store the pending revision payload — used by the reaction handler.
+    run.pending_revision = {
+        "trigger": "comments",
+        "comments": [
+            {
+                "filename": entry["file"]["name"],
+                "file_id": entry["file"]["id"],
+                "comment_id": c["id"],
+                "author": c["author_name"],
+                "anchor": c.get("anchor", ""),
+                "text": c["content"],
+            }
+            for entry in per_doc_comments
+            for c in entry["comments"]
+        ],
+        "additional_sources": [],
+        "version_prev": run.version,
+        "version_new": next_version,
+    }
+    run.mark("revision_pending", note=f"awaiting approval for {next_version}")
+    state.update(run)
+
+    resp = await say(text="\n".join(lines), thread_ts=message_ts)
+    if resp and "ts" in resp:
+        run.gate_message_ts["revision_summary"] = resp["ts"]
+        state.update(run)
 
 
 async def _handle_qa(channel_id: str, message_ts: str, state: StateStore, say) -> None:

@@ -63,7 +63,7 @@ The minimum we always have. Enough to deliver v1 of Workspace Context + Segment 
   - Competitor / category context: G2 "compared to" pages, analyst writeups.
 - **Outrizz internals (if available):** MSA, any Exhibit-A-style starting sketch, AM handoff notes. Approximate, not source of truth.
 
-**What Tier 0 produces:** Workspace Context v1, per-segment VPC v1, per-role VPC v1, Value Artifacts v1, Open Questions list (20–30 items). All role VPCs marked `Evidence level: LOW`. Notion subpage titles prefixed `⚠️ v0.1 — public sources only`.
+**What Tier 0 produces:** Workspace Context v1, per-segment VPC v1, per-role VPC v1, Value Artifacts v1, Open Questions list (**at most 10 items — only the highest-impact ones**). All role VPCs marked `Evidence level: LOW`. Notion subpage titles prefixed `⚠️ v0.1 — public sources only`.
 
 ### Tier 1 — Additive (public-facing voice content)
 
@@ -149,7 +149,7 @@ Time budget for Tier-0-only v1: ~½ to 1 working day for a typical client (one I
 5. **Influencer always included.** Each segment lists champion + decision maker + influencer, even when influencer is hard to identify. If you can't name the influencer role, log it as an Open Question.
 6. **Examples or it didn't happen.** Each segment ≥5 example companies (fit/borderline/exclude). Each role 2–3 real example people with LinkedIn URLs. If those numbers aren't reachable from public research, the segment/role is hypothetical → Open Questions, not a promoted output.
 7. **Value artifacts trace back.** Every pain reliever / gain creator statement in `OUT_Value_Artifacts.md` points to (a) the pain/gain it addresses in a segment or role VPC, and (b) the feature or service that delivers it from `INT_Product_Facts.md`. No dangling claims.
-8. **Open Questions is the relief valve.** Tier 0 runs produce 20–30 open questions.
+8. **Open Questions is the relief valve — but bounded.** Tier 0 runs produce **at most 10 open questions** — only the ones that materially block downstream listbuilding, sequence-writing, or qualification. Curate ruthlessly: if it doesn't block work, it doesn't get logged. Lower-priority uncertainties go inline as `[?]` notes in the relevant section, not into the OQ list.
 9. **Evidence level mandatory on every role VPC** — LOW / MEDIUM / HIGH per tier composition.
 10. **Anti-claims empty until Tier 2.** Log the gap; don't simulate.
 11. **Warning header until validated.** Notion subpage titles prefixed `⚠️ v0.1 — public sources only` until Tier 2 closes the anti-claims gap and Evidence levels rise.

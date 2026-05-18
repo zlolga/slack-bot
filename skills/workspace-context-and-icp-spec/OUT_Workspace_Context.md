@@ -81,7 +81,7 @@ See `02_outputs/<Client>_Value_Artifacts.md` for the outreach-ready inventory: f
 
 ## 6. Open Questions
 
-Live log. Tier 0 runs typically produce 20–30 items.
+Live log. **Cap at 10 items.** Only the highest-impact uncertainties — ones that materially block downstream listbuilding, sequence-writing, or qualification. Lower-priority questions go inline as `[?]` notes in the relevant section above, not here.
 
 ```
 ### OQ-[N]: [one-line question]

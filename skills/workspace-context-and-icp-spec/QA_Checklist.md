@@ -64,7 +64,7 @@
 
 - [ ] Every unresolved item is in Workspace Context §6 with full structure.
 - [ ] No Open Question silently closed by guessing.
-- [ ] On Tier 0 runs, count is in the 20–30 range.
+- [ ] On Tier 0 runs, count is **at most 10** — only highest-impact items that materially block downstream work.
 - [ ] AM briefed on Open Questions before delivery.
 
 ## Delivery gates
