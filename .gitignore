@@ -1,0 +1,28 @@
+# Secrets — never commit
+.env
+google_token.json
+google_oauth_client.json
+
+# Runtime state
+state.json
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+logs/

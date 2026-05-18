@@ -1,0 +1,32 @@
+[Unit]
+Description=Outrizz Lab Bot (workspace-setup agent for Slack)
+Documentation=https://github.com/OUR-ORG/outrizz-lab-bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=outrizz
+Group=outrizz
+WorkingDirectory=/opt/outrizz-lab-bot
+Environment="PATH=/opt/outrizz-lab-bot/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+EnvironmentFile=/opt/outrizz-lab-bot/.env
+ExecStart=/opt/outrizz-lab-bot/.venv/bin/python -m src.app
+Restart=on-failure
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=outrizz-lab-bot
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/outrizz-lab-bot /home/outrizz/.config/outrizz
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target

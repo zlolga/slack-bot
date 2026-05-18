@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "slack": {
+      "command": "npx",
+      "args": ["-y", "@slack/mcp-server@latest"],
+      "env": {
+        "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
+        "SLACK_MCP_ADD_MESSAGE_TOOL": "true",
+        "SLACK_MCP_REACTION_TOOL": "true"
+      }
+    },
+    "google-drive": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-google-drive@latest"],
+      "env": {
+        "GOOGLE_OAUTH_CLIENT_PATH": "${GOOGLE_OAUTH_CLIENT_PATH}",
+        "GOOGLE_TOKEN_PATH": "${GOOGLE_TOKEN_PATH}"
+      }
+    }
+  }
+}
